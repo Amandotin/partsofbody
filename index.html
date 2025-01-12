@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Previous head content remains exactly the same until the app div -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Body Parts Typer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .transition-colors {
+            transition-property: background-color, border-color, color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+        @keyframes backgroundMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .moving-background {
+            animation: backgroundMove 20s ease infinite;
+            background-size: 200% 200%;
+        }
+        .timer-bar {
+            height: 4px;
+            background-color: #4f46e5;
+            transition: width 120s linear;
+        }
+        .streak-message {
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+        .streak-message.pop {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="app" 
+         class="min-h-screen flex items-center justify-center p-4 moving-background"
+         style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1920&q=80');">
+        
+        <div class="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-2xl w-full max-w-lg">
+            <h1 class="text-4xl font-bold text-center mb-8 text-indigo-600">Body Parts Typer</h1>
+            
+            <div class="flex justify-between mb-6">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="text-indigo-600" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                    <span id="score" class="text-2xl font-semibold">0</span>
+                </div>
+            </div>
+
+            <div id="startScreen" class="text-center">
+                <button onclick="startGame()" class="w-full py-3 px-6 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-lg">
+                    Start Learning
+                </button>
+            </div>
+
+            <div id="gameScreen" class="hidden space-y-4">
+                <div class="text-center">
+                    <div class="text-sm text-gray-600 mb-1">
+                        <span id="streakMessage" class="streak-message font-medium text-lg text-indigo-600">Let's get started!</span>
+                        <span class="text-sm text-gray-500">(<span id="streak">0</span>)</span>
+                    </div>
+                    <div id="currentWord" class="text-3xl font-bold text-gray-800 mb-4"></div>
+                    <div id="meaningBox" class="hidden">
+                        <div class="timer-bar w-full" id="timerBar"></div>
+                        <div class="p-4 bg-green-50 rounded-lg mb-4 transition-all">
+                            <p id="meaning" class="text-green-800"></p>
+                        </div>
+                    </div>
+                </div>
+                <input
+                    type="text"
+                    id="userInput"
+                    class="w-full p-3 text-center text-xl border-2 rounded-lg outline-none transition-colors border-gray-300 focus:border-indigo-500"
+                    placeholder="Type the body part..."
+                    autocomplete="off"
+                >
+                <button
+                    onclick="nextWord()"
+                    class="w-full py-2 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center justify-center gap-2"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    Next Word
+                </button>
+            </div>
+
+            <div id="resultScreen" class="hidden text-center space-y-4">
+                <div class="text-3xl font-bold text-indigo-600">Well Done!</div>
+                <div class="text-xl">You learned <span id="finalScore">0</span> body parts</div>
+                <button onclick="startGame()" class="flex items-center justify-center gap-2 w-full py-3 px-6 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    Learn More
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BODY_PARTS = {
+            brain: "The control center of the body that processes thoughts and emotions",
+            heart: "A muscular organ that pumps blood throughout the body",
+            lungs: "Organs that help you breathe by taking in oxygen and releasing carbon dioxide",
+            kidney: "Organs that filter waste and extra water from your blood",
+            liver: "The largest internal organ that helps clean your blood and digest food",
+            stomach: "An organ that helps digest food and break down what you eat",
+            pancreas: "An organ that helps regulate blood sugar and aids in digestion",
+            skull: "The bony structure that protects your brain",
+            spine: "The column of bones that protects your spinal cord and helps you stand upright",
+            muscle: "Tissue that helps you move and maintains posture",
+            bones: "The framework of the body that provides structure and protection",
+            teeth: "Hard structures in the mouth used for biting and chewing food",
+            tongue: "A muscular organ in the mouth used for tasting and speaking",
+            throat: "The passage from the back of your mouth to your stomach",
+            finger: "One of the five digits on each hand used for grasping",
+            elbow: "The joint between the upper and lower arm",
+            shoulder: "The joint connecting the arm to the torso",
+            ankle: "The joint connecting the foot to the leg",
+            knee: "The joint connecting the thigh to the lower leg",
+            wrist: "The joint connecting the hand to the forearm",
+            skin: "The largest organ that covers and protects the body",
+            eyes: "Organs that allow you to see the world around you",
+            ears: "Organs that allow you to hear sounds",
+            nose: "The organ used for smelling and breathing",
+            intestines: "Organs that digest food and absorb nutrients"
+        };
+
+        // Rest of the JavaScript code remains exactly the same
+        const STREAK_MESSAGES = [
+            "Let's get started!",
+            "Good job buddy! 🌟",
+            "You're on fire! 🔥",
+            "Rock and Roll! 🎸",
+            "Unstoppable! 💪",
+            "You're crushing it! 💥",
+            "What a champion! 👑",
+            "Legendary! 🌈",
+            "Mind-blowing! 🎯",
+            "You're a superstar! ⭐",
+            "Absolutely brilliant! 💫",
+            "Keep rocking! 🤘",
+            "You're amazing! 🚀",
+            "Spectacular! ✨",
+            "Phenomenal! 🌟"
+        ];
+
+        let currentWord = '';
+        let score = 0;
+        let streak = 0;
+        let meaningTimer = null;
+
+        const updateStreakMessage = () => {
+            const messageIndex = Math.min(streak, STREAK_MESSAGES.length - 1);
+            const streakMessage = document.getElementById('streakMessage');
+            streakMessage.textContent = STREAK_MESSAGES[messageIndex];
+            streakMessage.classList.add('pop');
+            setTimeout(() => streakMessage.classList.remove('pop'), 300);
+        };
+
+        const getRandomWord = () => {
+            const words = Object.keys(BODY_PARTS);
+            return words[Math.floor(Math.random() * words.length)];
+        };
+
+        const showScreen = (screenId) => {
+            ['startScreen', 'gameScreen', 'resultScreen'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        };
+
+        const clearTimers = () => {
+            if (meaningTimer) {
+                clearTimeout(meaningTimer);
+                meaningTimer = null;
+            }
+        };
+
+        const startMeaningTimer = () => {
+            clearTimers();
+            const meaningBox = document.getElementById('meaningBox');
+            const timerBar = document.getElementById('timerBar');
+            
+            meaningBox.classList.remove('hidden');
+            timerBar.style.width = '100%';
+            
+            // Reset the transition
+            timerBar.style.transition = 'none';
+            timerBar.offsetHeight; // Force reflow
+            timerBar.style.transition = 'width 120s linear'; // 120 seconds = 2 minutes
+            timerBar.style.width = '0';
+            
+            meaningTimer = setTimeout(() => {
+                nextWord();
+            }, 120000); // 2 minutes in milliseconds
+        };
+
+        const nextWord = () => {
+            clearTimers();
+            streak = 0;
+            document.getElementById('streak').textContent = streak;
+            updateStreakMessage();
+            currentWord = getRandomWord();
+            document.getElementById('currentWord').textContent = currentWord;
+            document.getElementById('userInput').value = '';
+            document.getElementById('meaningBox').classList.add('hidden');
+            document.getElementById('userInput').classList.remove('border-green-500', 'bg-green-50', 'border-red-500', 'bg-red-50');
+            document.getElementById('userInput').focus();
+            const timerBar = document.getElementById('timerBar');
+            timerBar.style.width = '100%';
+        };
+
+        const startGame = () => {
+            score = 0;
+            streak = 0;
+            document.getElementById('score').textContent = score;
+            document.getElementById('streak').textContent = streak;
+            updateStreakMessage();
+            currentWord = getRandomWord();
+            document.getElementById('currentWord').textContent = currentWord;
+            document.getElementById('userInput').value = '';
+            document.getElementById('meaningBox').classList.add('hidden');
+            showScreen('gameScreen');
+            document.getElementById('userInput').focus();
+        };
+
+        document.getElementById('userInput').addEventListener('input', (e) => {
+            const input = e.target;
+            const value = input.value.toLowerCase();
+
+            if (value === currentWord) {
+                score++;
+                streak++;
+                document.getElementById('score').textContent = score;
+                document.getElementById('streak').textContent = streak;
+                updateStreakMessage();
+                input.classList.add('border-green-500', 'bg-green-50');
+                document.getElementById('meaning').textContent = BODY_PARTS[currentWord];
+                startMeaningTimer();
+            } else if (value.length === currentWord.length && value !== currentWord) {
+                streak = 0;
+                document.getElementById('streak').textContent = streak;
+                updateStreakMessage();
+                input.classList.add('border-red-500', 'bg-red-50');
+                setTimeout(() => {
+                    input.classList.remove('border-red-500', 'bg-red-50');
+                }, 500);
+            }
+        });
+
+        // Initialize
+        showScreen('startScreen');
+    </script>
+</body>
+</html>
